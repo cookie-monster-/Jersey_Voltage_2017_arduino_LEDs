@@ -20,7 +20,17 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_RGB + NEO_KHZ80
 
 int delayval = 500; // delay for half a second
 int incomingByte = 0;
-uint32_t color = pixels.Color(255,0,0);
+uint32_t yellow = pixels.Color(150,255,0);
+uint32_t blue = pixels.Color(0,0,255);
+uint32_t red = pixels.Color(0,255,0);
+uint32_t green = pixels.Color(255,0,0);
+uint32_t color = pixels.Color(0,0,255);
+uint32_t altColor = pixels.Color(150,255,0);
+int searching = 64;
+int haveGear = 65;
+int haveGearTarget = 66;
+int idle = 67;
+int partyMode = 68;
 
 void setup() {
   pixels.begin(); // This initializes the NeoPixel library.
@@ -36,33 +46,109 @@ void loop() {
     incomingByte = Serial.read();
     Serial.print("I received: ");
     Serial.println(incomingByte, DEC);
-    if (incomingByte == 64)
+    if (incomingByte == searching)
     {
-      color = pixels.Color(0,0,255);
+      chase(red, yellow);
     }
-    else if (incomingByte == 65)
+    else if (incomingByte == haveGear)
     {
-    
-      color = pixels.Color(0,255,0);
+      chase(blue, yellow);
     }
-    else if (incomingByte == 66)
+    else if (incomingByte == haveGearTarget)
     {
-      color = pixels.Color(255,0,0);
+      chase(green, blue);
+    }
+    else if (incomingByte == idle)
+    {
+      chase(green, blue);
+    }
+    else if (incomingByte == partyMode)
+    {
+      chase(green, blue);
     }
   }
+  idleMode(yellow, blue);
+  //chase(red, yellow);
   Serial.println(color, DEC);
-  for (uint16_t i=0; i<pixels.numPixels(); ++i)
-  {
-    pixels.setPixelColor(i,color);
-    pixels.show();
-    //delay(50);
-    //Serial.println(i);
-  }
-
+  /*while(true){
+    for (uint16_t i=0; i<pixels.numPixels(); ++i)
+    {
+      if (i%2==0)
+      {
+        pixels.setPixelColor(i,color);
+        pixels.show();
+      }
+      else
+      {
+        pixels.setPixelColor(i,altColor);
+        pixels.show();
+      }
+      //delay(10);
+      //Serial.println(i);
+    }
+    delay(1000);*/
+    /*for (uint16_t i=0; i<pixels.numPixels(); ++i)
+    {
+      if (i%2==1)
+      {
+        pixels.setPixelColor(i,color);
+        pixels.show();
+      }
+      else
+      {
+        pixels.setPixelColor(i,altColor);
+        pixels.show();
+      }
+      //delay(10);
+      //Serial.println(i);
+    }
+    delay(1000);*/
+  
   //murica();
  
 }
 
+void chase(uint32_t color, uint32_t chaseColor){
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,color);
+     pixels.show();
+  }
+    for (uint16_t i=0; i<pixels.numPixels(); ++i)
+    {
+       int otherI = i + pixels.numPixels()/2;
+       if (otherI > pixels.numPixels())
+       {
+        otherI = i - pixels.numPixels()/2;
+       }
+       pixels.setPixelColor(i,chaseColor);
+       pixels.setPixelColor(i-1,color);
+       pixels.setPixelColor(otherI,chaseColor);
+       pixels.setPixelColor(otherI-1,color);
+       pixels.show();
+       delay(30);
+    }
+}
+
+void idleMode(uint32_t color, uint32_t color1){
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+    pixels.setPixelColor(i, color);
+    pixels.show();
+  }
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+    int otherI = i + pixels.numPixels()/2;
+    if (otherI > pixels.numPixels())
+    {
+      otherI = i - pixels.numPixels()/2;
+    }
+    pixels.setPixelColor(i, color1);
+    pixels.setPixelColor(otherI, color);
+    pixels.show();
+    delay(30);
+  }
+}
 /*void murica(){
   unsigned int pos = 0;
   int timeDelay = 5;
