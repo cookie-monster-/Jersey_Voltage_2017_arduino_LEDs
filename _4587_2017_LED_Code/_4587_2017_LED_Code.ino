@@ -26,11 +26,12 @@ uint32_t red = pixels.Color(0,255,0);
 uint32_t green = pixels.Color(255,0,0);
 uint32_t color = pixels.Color(0,0,255);
 uint32_t altColor = pixels.Color(150,255,0);
-int searching = 64;
-int haveGear = 65;
-int haveGearTarget = 66;
-int idle = 67;
-int partyMode = 68;
+uint32_t off = pixels.Color(0,0,0);
+byte searching = 64;
+byte haveGear = 65;
+byte haveGearTarget = 66;
+byte idle = 67;
+byte partyMode = 68;
 
 void setup() {
   pixels.begin(); // This initializes the NeoPixel library.
@@ -41,33 +42,43 @@ void setup() {
 void loop() {
 
   // For a set of NeoPixels the first NeoPixel is 0, second is 1, all the way up to the count of pixels minus one.
-  if (Serial.available() > 0)
-  {
+  //if (Serial.available())
+  //{
     incomingByte = Serial.read();
     Serial.print("I received: ");
     Serial.println(incomingByte, DEC);
-    if (incomingByte == searching)
+    if (incomingByte == (byte)64)
     {
       chase(red, yellow);
     }
-    else if (incomingByte == haveGear)
+    else if (incomingByte == (byte)65)
     {
       chase(blue, yellow);
     }
-    else if (incomingByte == haveGearTarget)
+    else if (incomingByte == (byte)66)
     {
       chase(green, blue);
     }
-    else if (incomingByte == idle)
+    else if (incomingByte == (byte)67)
     {
       chase(green, blue);
     }
-    else if (incomingByte == partyMode)
+    else if (incomingByte == (byte)68)
     {
       chase(green, blue);
     }
-  }
-  idleMode(yellow, blue);
+    else{
+      //idleMode(red, green);   
+        //chase(yellow, red); 
+        blackAndYellow();
+       //flash(yellow, 20);
+       //bounce(red,30);
+       //bounce(blue,10);
+       //bounce(green,10);
+       //bounce(yellow,20);
+    }
+  //}
+  //idleMode(yellow, blue);
   //chase(red, yellow);
   Serial.println(color, DEC);
   /*while(true){
@@ -130,7 +141,40 @@ void chase(uint32_t color, uint32_t chaseColor){
     }
 }
 
+void blackAndYellow(){
+  uint32_t black = pixels.Color(0,0,0);
+  uint32_t yellow = pixels.Color(150,255,0);
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,yellow);
+     pixels.show();
+  }
+    for (uint16_t i=0; i<pixels.numPixels(); ++i)
+    {
+       int secondI = i + 2;
+       int thirdI = secondI + 2;
+       if (secondI > pixels.numPixels())
+       {
+        secondI = 0;
+        thirdI = 2;
+       }
+       else if (thirdI > pixels.numPixels())
+       {
+        thirdI = 0;
+       }
+       pixels.setPixelColor(i,black);
+       pixels.setPixelColor(i-1,yellow);
+       pixels.setPixelColor(secondI,black);
+       pixels.setPixelColor(secondI-1,yellow);
+       pixels.setPixelColor(thirdI,black);
+       pixels.setPixelColor(thirdI-1,yellow);
+       pixels.show();
+       delay(20);
+    }
+}
+
 void idleMode(uint32_t color, uint32_t color1){
+    delay(50);
   for (uint16_t i=0; i<pixels.numPixels(); ++i)
   {
     pixels.setPixelColor(i, color);
@@ -147,6 +191,38 @@ void idleMode(uint32_t color, uint32_t color1){
     pixels.setPixelColor(otherI, color);
     pixels.show();
     delay(30);
+  }
+}
+
+void flash(uint32_t color, int delayTime){
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,color);
+     pixels.show();
+  }
+  delay(delayTime);
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,pixels.Color(0,0,0));
+     pixels.show();
+  }
+  delay(delayTime);
+}
+
+void bounce(uint32_t color, int delayTime){
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,color);
+     pixels.setPixelColor(i-1,pixels.Color(0,0,0));
+     pixels.show();
+     delay(delayTime);
+  }
+  for (uint16_t i=pixels.numPixels(); i>0; --i)
+  {
+     pixels.setPixelColor(i,color);
+     pixels.setPixelColor(i+1,pixels.Color(0,0,0));
+     pixels.show();
+     delay(delayTime);
   }
 }
 /*void murica(){
