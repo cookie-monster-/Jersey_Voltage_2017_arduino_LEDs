@@ -13,26 +13,32 @@
 // How many NeoPixels are attached to the Arduino?
 #define NUMPIXELS      20
 
+
 // When we setup the NeoPixel library, we tell it how many pixels, and which pin to use to send signals.
 // Note that for older NeoPixel strips you might need to change the third parameter--see the strandtest
 // example for more information on possible values.
-Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_RGB + NEO_KHZ800);
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
+
 
 int delayval = 500; // delay for half a second
 int incomingByte = 0;
-uint32_t yellow = pixels.Color(150,255,0);
+uint32_t yellow = pixels.Color(255,150,0);
 uint32_t blue = pixels.Color(0,0,255);
-uint32_t red = pixels.Color(0,255,0);
-uint32_t green = pixels.Color(255,0,0);
+uint32_t green = pixels.Color(0,255,0);
+uint32_t red = pixels.Color(255,0,0);
 uint32_t color = pixels.Color(0,0,255);
 uint32_t altColor = pixels.Color(150,255,0);
 uint32_t off = pixels.Color(0,0,0);
+uint32_t white = pixels.Color(255,255,255);
 byte searching = 64;
 byte haveGear = 65;
 byte haveGearTarget = 66;
 byte idle = 67;
 byte partyMode = 68;
+int istep = 0;
 
+String lastMode = "partyMode";
+String prevMode = "partyMode";
 void setup() {
   pixels.begin(); // This initializes the NeoPixel library.
   pixels.setBrightness(255);
@@ -42,41 +48,69 @@ void setup() {
 void loop() {
 
   // For a set of NeoPixels the first NeoPixel is 0, second is 1, all the way up to the count of pixels minus one.
-  //if (Serial.available())
-  //{
+  prevMode = lastMode;
+  if (Serial.available())
+  {
     incomingByte = Serial.read();
     Serial.print("I received: ");
     Serial.println(incomingByte, DEC);
     if (incomingByte == (byte)64)
     {
-      chase(red, yellow);
+      lastMode = "searching";
     }
     else if (incomingByte == (byte)65)
     {
-      chase(blue, yellow);
+      lastMode = "haveGear";
     }
     else if (incomingByte == (byte)66)
     {
-      chase(green, blue);
+      lastMode = "haveGearTarget";
     }
     else if (incomingByte == (byte)67)
     {
-      chase(green, blue);
-    }
+      lastMode = "idle";
+     }
     else if (incomingByte == (byte)68)
     {
-      chase(green, blue);
+      lastMode = "partyMode";
     }
-    else{
+  }
+  if(prevMode != lastMode) {
+    istep = 0;
+  }
+  if(lastMode == "searching"){
+    //chaseBounce(red, yellow);
+    chaseBounceIncremental(red, yellow, &istep);
+  }else if(lastMode == "haveGear"){
+    //flashAltOff(white, 20);
+    flashAltOffIncremental(white, 20, &istep);
+  }else if(lastMode == "haveGearTarget"){
+    //flashAltOff(green, 20);
+    flashAltOffIncremental(green, 20, &istep);
+  }else if(lastMode == "idle"){
+    //chaseBounce(yellow,white);
+    chaseBounceIncremental(yellow,white, &istep);
+  }else if(lastMode == "partyMode"){
+    Flame();
+  }
+    /*else{
       //idleMode(red, green);   
         //chase(yellow, red); 
-        blackAndYellow();
-       //flash(yellow, 20);
+        //chaseBounce(yellow, white);
+        //yellowFlame();
+       // Fire(35,170,60);
+       //Flame();
+       // blackAndYellow();
+        blackAndYellowBounce(10);
+        //flashAltOff(blue, 200);
+        //flashAltColors(yellow, white, 20);
+        //flashAltOffColors(yellow, white, 20);
+       //flash(white, 20);
        //bounce(red,30);
        //bounce(blue,10);
        //bounce(green,10);
        //bounce(yellow,20);
-    }
+    }*/
   //}
   //idleMode(yellow, blue);
   //chase(red, yellow);
@@ -141,9 +175,83 @@ void chase(uint32_t color, uint32_t chaseColor){
     }
 }
 
-void blackAndYellow(){
+void chaseBounce(uint32_t color, uint32_t chaseColor){
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,color);
+     pixels.show();
+  }
+    for (uint16_t i=0; i<pixels.numPixels(); ++i)
+    {
+       int otherI = i + pixels.numPixels()/2;
+       if (otherI > pixels.numPixels())
+       {
+        otherI = i - pixels.numPixels()/2;
+       }
+       pixels.setPixelColor(i,chaseColor);
+       pixels.setPixelColor(i-1,color);
+       pixels.setPixelColor(otherI,chaseColor);
+       pixels.setPixelColor(otherI-1,color);
+       pixels.show();
+       delay(30);
+    }
+    for (uint16_t i=pixels.numPixels(); i>0; --i)
+    {
+       int otherI = i - pixels.numPixels()/2;
+       if (otherI > pixels.numPixels())
+       {
+        otherI = i + pixels.numPixels()/2;
+       }
+       pixels.setPixelColor(i,chaseColor);
+       pixels.setPixelColor(i+1,color);
+       pixels.setPixelColor(otherI,chaseColor);
+       pixels.setPixelColor(otherI+1,color);
+       pixels.show();
+       delay(30);
+    }
+}
+
+void chaseBounceIncremental(uint32_t color, uint32_t chaseColor, int *istep){
+  if ( (*istep) == 0 ) {
+    for (uint16_t i=0; i<pixels.numPixels(); ++i)
+    {
+       pixels.setPixelColor(i,color);
+       pixels.show();
+    }
+  }
+  if ( (*istep) < pixels.numPixels() ) {
+     int i = (*istep);
+     int otherI = i + pixels.numPixels()/2;
+     if (otherI > pixels.numPixels())
+     {
+      otherI = i - pixels.numPixels()/2;
+     }
+     pixels.setPixelColor(i,chaseColor);
+     pixels.setPixelColor(i-1,color);
+     pixels.setPixelColor(otherI,chaseColor);
+     pixels.setPixelColor(otherI-1,color);
+     pixels.show();
+     delay(30);
+  } else {
+    int i = (*istep) - pixels.numPixels();
+    int otherI = i - pixels.numPixels()/2;
+    if (otherI > pixels.numPixels())
+    {
+    otherI = i + pixels.numPixels()/2;
+    }
+    pixels.setPixelColor(i,chaseColor);
+    pixels.setPixelColor(i+1,color);
+    pixels.setPixelColor(otherI,chaseColor);
+    pixels.setPixelColor(otherI+1,color);
+    pixels.show();
+    delay(30);
+  }
+  (*istep) = ((*istep) + 1) % (2 * pixels.numPixels());
+}
+
+void blackAndYellow(int delayTime){
   uint32_t black = pixels.Color(0,0,0);
-  uint32_t yellow = pixels.Color(150,255,0);
+  uint32_t yellow = pixels.Color(255,150,0);
   for (uint16_t i=0; i<pixels.numPixels(); ++i)
   {
      pixels.setPixelColor(i,yellow);
@@ -169,7 +277,7 @@ void blackAndYellow(){
        pixels.setPixelColor(thirdI,black);
        pixels.setPixelColor(thirdI-1,yellow);
        pixels.show();
-       delay(20);
+       delay(delayTime);
     }
 }
 
@@ -209,6 +317,87 @@ void flash(uint32_t color, int delayTime){
   delay(delayTime);
 }
 
+void flashAltColors(uint32_t color, uint32_t altColor, int delayTime){
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,color);
+     pixels.show();
+  }
+  delay(delayTime);
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,pixels.Color(0,0,0));
+     pixels.show();
+  }
+  delay(delayTime);
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,altColor);
+     pixels.show();
+  }
+  delay(delayTime);
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,pixels.Color(0,0,0));
+     pixels.show();
+  }
+  delay(delayTime);
+}
+
+void flashAltOff(uint32_t color, int delayTime){
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+    if(i%2==0)
+    {
+     pixels.setPixelColor(i,color);
+     pixels.show();
+    }
+    else
+    {
+     pixels.setPixelColor(i,pixels.Color(0,0,0));
+     pixels.show();
+    }
+  }
+  delay(delayTime);
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+    if(i%2==1)
+    {
+     pixels.setPixelColor(i,color);
+     pixels.show();
+    }
+    else
+    {
+     pixels.setPixelColor(i,pixels.Color(0,0,0));
+     pixels.show();
+    }
+  }
+  delay(delayTime);
+}
+void flashAltOffIncremental(uint32_t color, int delayTime, int *istep){
+  int even_odd = ((*istep) == 0) ? 0 : 1;
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+    if(i%2==even_odd)
+    {
+     pixels.setPixelColor(i,color);
+     pixels.show();
+    }
+    else
+    {
+     pixels.setPixelColor(i,pixels.Color(0,0,0));
+     pixels.show();
+    }
+  }
+  delay(delayTime);
+  (*istep) = ((*istep) + 1) % 2;
+}
+void flashAltOffColors(uint32_t color, uint32_t altColor, int delayTime)
+{
+  flashAltOff(color, delayTime);
+  flashAltOff(altColor, delayTime);
+}
+
 void bounce(uint32_t color, int delayTime){
   for (uint16_t i=0; i<pixels.numPixels(); ++i)
   {
@@ -224,6 +413,44 @@ void bounce(uint32_t color, int delayTime){
      pixels.show();
      delay(delayTime);
   }
+}
+
+
+void blackAndYellowBounce(int delayTime){
+  uint32_t black = pixels.Color(0,0,0);
+  uint32_t yellow = pixels.Color(255,150,0);
+  for (uint16_t i=0; i<pixels.numPixels(); ++i)
+  {
+     pixels.setPixelColor(i,yellow);
+     pixels.show();
+  }
+    for (uint16_t i=0; i<pixels.numPixels(); ++i)
+    {
+       int secondI = i + 2;
+       int thirdI = secondI + 2;
+       pixels.setPixelColor(i,black);
+       pixels.setPixelColor(i-1,yellow);
+       pixels.setPixelColor(secondI,black);
+       pixels.setPixelColor(secondI-1,yellow);
+       pixels.setPixelColor(thirdI,black);
+       pixels.setPixelColor(thirdI-1,yellow);
+       pixels.show();
+       delay(delayTime);
+    }
+    
+    for (uint16_t i=pixels.numPixels(); i>0; --i)
+    {
+       int secondI = i - 2;
+       int thirdI = secondI - 2;
+       pixels.setPixelColor(i,black);
+       pixels.setPixelColor(i+1,yellow);
+       pixels.setPixelColor(secondI,black);
+       pixels.setPixelColor(secondI+1,yellow);
+       pixels.setPixelColor(thirdI,black);
+       pixels.setPixelColor(thirdI+1,yellow);
+       pixels.show();
+       delay(delayTime);
+    }
 }
 /*void murica(){
   unsigned int pos = 0;
@@ -290,3 +517,79 @@ void bounce(uint32_t color, int delayTime){
       pos = 0; 
   }
 }*/
+void Fire(int Cooling, int Sparking, int SpeedDelay) {
+  
+  static byte heat[20];
+  int cooldown;
+  
+  // Step 1.  Cool down every cell a little
+  for( int i = 0; i < pixels.numPixels(); i++) {
+    cooldown = random(0, ((Cooling * 10) / pixels.numPixels()) + 2);
+    
+    if(cooldown>heat[i]) {
+      heat[i]=0;
+    } else {
+      heat[i]=heat[i]-cooldown;
+    }
+  }
+  
+  // Step 2.  Heat from each cell drifts 'up' and diffuses a little
+  for( int k= pixels.numPixels() - 1; k >= 2; k--) {
+    heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2]) / 3;
+  }
+    
+  // Step 3.  Randomly ignite new 'sparks' near the bottom
+  if( random(255) < Sparking ) {
+    int y = random(7);
+    heat[y] = heat[y] + random(160,255);
+    //heat[y] = random(160,255);
+  }
+
+  // Step 4.  Convert heat to LED colors
+  for( int j = 0; j < pixels.numPixels(); j++) {
+    setPixelHeatColor(j, heat[j] );
+  }
+
+  pixels.show();
+  delay(SpeedDelay);
+}
+
+void setPixelHeatColor (int Pixel, byte temperature) {
+  // Scale 'heat' down from 0-255 to 0-191
+  byte t192 = round((temperature/255.0)*191);
+ 
+  // calculate ramp up from
+  byte heatramp = t192 & 0x3F; // 0..63
+  heatramp <<= 2; // scale up to 0..252
+ 
+  // figure out which third of the spectrum we're in:
+  if( t192 > 0x80) {                     // hottest
+    pixels.setPixelColor(Pixel, 255, 255, heatramp);
+  } else if( t192 > 0x40 ) {             // middle
+    pixels.setPixelColor(Pixel, 255, heatramp, 0);
+  } else {                               // coolest
+    pixels.setPixelColor(Pixel, heatramp, 0, 0);
+  }
+}
+
+
+void Flame(){
+  int r = 255;
+  int g = r-120;
+  int b = 40;
+  
+  for(int x = 0; x <99; x++)
+  {
+  int flicker = random(0,150);
+  int r1 = r-flicker;
+  int g1 = g-flicker;
+  int b1 = b-flicker;
+  if(g1<0) g1=0;
+  if(r1<0) r1=0;
+  if(b1<0) b1=0;
+  pixels.setPixelColor(x,r1,g1, b1);
+  }
+  pixels.show();
+  delay(random(50,150));
+}
+
