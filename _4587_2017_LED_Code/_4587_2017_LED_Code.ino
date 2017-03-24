@@ -2,6 +2,7 @@
 // released under the GPLv3 license to match the rest of the AdaFruit NeoPixel library
 
 #include <Adafruit_NeoPixel.h>
+#include <Wire.h>
 #ifdef __AVR__
   #include <avr/power.h>
 #endif
@@ -43,6 +44,7 @@ void setup() {
   pixels.begin(); // This initializes the NeoPixel library.
   pixels.setBrightness(255);
   pixels.show();
+  Wire.begin(84);
   Serial.begin(9600);
 }
 void loop() {
@@ -75,6 +77,31 @@ void loop() {
       lastMode = "partyMode";
     }
   }
+
+  if(Wire.available()){
+      char incomingByteX = Wire.read();
+      if (incomingByteX == (byte)64)
+      {
+        lastMode = "searching";
+      }
+      else if (incomingByteX == (byte)65)
+      {
+        lastMode = "haveGear";
+      }
+      else if (incomingByteX == (byte)66)
+      {
+        lastMode = "haveGearTarget";
+      }
+      else if (incomingByteX == (byte)67)
+      {
+        lastMode = "idle";
+       }
+      else if (incomingByteX == (byte)68)
+      {
+        lastMode = "partyMode";
+      }
+    }
+  
   if(prevMode != lastMode) {
     istep = 0;
   }
@@ -93,6 +120,9 @@ void loop() {
   }else if(lastMode == "partyMode"){
     Flame();
   }
+
+  
+  
     /*else{
       //idleMode(red, green);   
         //chase(yellow, red); 
