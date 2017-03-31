@@ -31,11 +31,13 @@ uint32_t color = pixels.Color(0,0,255);
 uint32_t altColor = pixels.Color(150,255,0);
 uint32_t off = pixels.Color(0,0,0);
 uint32_t white = pixels.Color(255,255,255);
-byte searching = 64;
-byte haveGear = 65;
-byte haveGearTarget = 66;
-byte idle = 67;
-byte partyMode = 68;
+byte aimingTarget = 64;
+byte haveGearDown = 65;
+byte haveGearUpNoTarget = 66;
+byte noGearDownMotorOff = 67;
+byte noGearDownMotorOn = 68;
+byte noGearUp = 69;
+byte partyMode = 70;
 int istep = 0;
 
 String lastMode = "partyMode";
@@ -56,69 +58,56 @@ void loop() {
     incomingByte = Serial.read();
     Serial.print("I received: ");
     Serial.println(incomingByte, DEC);
-    if (incomingByte == (byte)64)
+    if (incomingByte == aimingTarget)
     {
-      lastMode = "searching";
+      lastMode = "aimingTarget";
     }
-    else if (incomingByte == (byte)65)
+    else if (incomingByte == haveGearDown)
     {
-      lastMode = "haveGear";
+      lastMode = "haveGearDown";
     }
-    else if (incomingByte == (byte)66)
+    else if (incomingByte == haveGearUpNoTarget)
     {
-      lastMode = "haveGearTarget";
+      lastMode = "haveGearUpNoTarget";
     }
-    else if (incomingByte == (byte)67)
+    else if (incomingByte == noGearDownMotorOff)
     {
-      lastMode = "idle";
+      lastMode = "noGearDownMotorOff";
      }
-    else if (incomingByte == (byte)68)
+    else if (incomingByte == noGearDownMotorOn)
+    {
+      lastMode = "noGearDownMotorOn";
+    }
+    else if (incomingByte == noGearUp)
+    {
+      lastMode = "noGearUp";
+    }
+    else if (incomingByte == partyMode)
     {
       lastMode = "partyMode";
     }
   }
-
-  if(Wire.available()){
-      char incomingByteX = Wire.read();
-      if (incomingByteX == (byte)64)
-      {
-        lastMode = "searching";
-      }
-      else if (incomingByteX == (byte)65)
-      {
-        lastMode = "haveGear";
-      }
-      else if (incomingByteX == (byte)66)
-      {
-        lastMode = "haveGearTarget";
-      }
-      else if (incomingByteX == (byte)67)
-      {
-        lastMode = "idle";
-       }
-      else if (incomingByteX == (byte)68)
-      {
-        lastMode = "partyMode";
-      }
-    }
   
   if(prevMode != lastMode) {
     istep = 0;
   }
-  if(lastMode == "searching"){
-    //chaseBounce(red, yellow);
-    chaseBounceIncremental(red, yellow, &istep);
-  }else if(lastMode == "haveGear"){
-    //flashAltOff(white, 20);
-    flashAltOffIncremental(white, 20, &istep);
-  }else if(lastMode == "haveGearTarget"){
-    //flashAltOff(green, 20);
-    flashAltOffIncremental(green, 20, &istep);
-  }else if(lastMode == "idle"){
-    //chaseBounce(yellow,white);
-    chaseBounceIncremental(yellow,white, &istep);
+  if(lastMode == "aimingTarget"){
+    //chaseBounceIncremental(red, yellow, &istep);
+    //stuff
+  }else if(lastMode == "haveGearDown"){
+    //flashAltOffIncremental(white, 20, &istep);
+    flash(white,20); 
+  }else if(lastMode == "haveGearUpNoTarget"){
+    flash(green,400);
+  }else if(lastMode == "noGearDownMotorOff"){
+    solid(yellow,&istep);
+  }else if(lastMode == "noGearDownMotorOn"){
+    flashAltOffIncremental(yellow, 200, &istep);
+  }else if(lastMode == "noGearUp"){
+    chaseBounceIncremental(yellow,blue, &istep);
   }else if(lastMode == "partyMode"){
-    Flame();
+    //Flame();
+    Fire(35,100,60);
   }
 
   
@@ -183,6 +172,16 @@ void loop() {
  
 }
 
+void solid(uint32_t color,int *istep){
+  if ( (*istep) == 0 ) {
+    for (uint16_t i=0; i<pixels.numPixels(); ++i)
+    {
+       pixels.setPixelColor(i,color);
+       pixels.show();
+    }
+  }
+}
+
 void chase(uint32_t color, uint32_t chaseColor){
   for (uint16_t i=0; i<pixels.numPixels(); ++i)
   {
@@ -203,6 +202,31 @@ void chase(uint32_t color, uint32_t chaseColor){
        pixels.show();
        delay(30);
     }
+}
+
+void chaseIncremental(uint32_t color, uint32_t chaseColor, int *istep){
+  if ( (*istep) == 0 ) {
+    for (uint16_t i=0; i<pixels.numPixels(); ++i)
+    {
+       pixels.setPixelColor(i,color);
+       pixels.show();
+    }
+  }
+  if ( (*istep) < pixels.numPixels() ) {
+     int i = (*istep);
+     int otherI = i + pixels.numPixels()/2;
+     if (otherI > pixels.numPixels())
+     {
+      otherI = i - pixels.numPixels()/2;
+     }
+     pixels.setPixelColor(i,chaseColor);
+     pixels.setPixelColor(i-1,color);
+     pixels.setPixelColor(otherI,chaseColor);
+     pixels.setPixelColor(otherI-1,color);
+     pixels.show();
+     delay(40);
+  }
+  (*istep) = ((*istep) + 1) % (pixels.numPixels());
 }
 
 void chaseBounce(uint32_t color, uint32_t chaseColor){
@@ -264,6 +288,7 @@ void chaseBounceIncremental(uint32_t color, uint32_t chaseColor, int *istep){
      delay(30);
   } else {
     int i = (*istep) - pixels.numPixels();
+    i = pixels.numPixels() - i;
     int otherI = i - pixels.numPixels()/2;
     if (otherI > pixels.numPixels())
     {
