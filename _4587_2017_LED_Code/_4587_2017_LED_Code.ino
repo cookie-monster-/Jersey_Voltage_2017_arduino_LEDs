@@ -53,7 +53,7 @@ void loop() {
 
   // For a set of NeoPixels the first NeoPixel is 0, second is 1, all the way up to the count of pixels minus one.
   prevMode = lastMode;
-  if (Serial.available())
+  while (Serial.available())
   {
     incomingByte = Serial.read();
     Serial.print("I received: ");
