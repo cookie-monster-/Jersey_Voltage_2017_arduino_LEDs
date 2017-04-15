@@ -40,8 +40,8 @@ byte noGearUp = 69;
 byte partyMode = 70;
 int istep = 0;
 
-String lastMode = "partyMode";
-String prevMode = "partyMode";
+String lastMode = "noGearUp";
+String prevMode = "noGearUp";
 void setup() {
   pixels.begin(); // This initializes the NeoPixel library.
   pixels.setBrightness(255);
