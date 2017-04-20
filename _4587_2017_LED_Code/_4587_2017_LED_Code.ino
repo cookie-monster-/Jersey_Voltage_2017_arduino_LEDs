@@ -47,10 +47,10 @@ void setup() {
   pixels.setBrightness(255);
   pixels.show();
   Wire.begin(84);
-  Serial.begin(9600);
+  //Serial.begin(9600);
 }
 void loop() {
-
+  Serial.println("it works");
   // For a set of NeoPixels the first NeoPixel is 0, second is 1, all the way up to the count of pixels minus one.
   prevMode = lastMode;
   while (Serial.available())
@@ -170,6 +170,42 @@ void loop() {
   
   //murica();
  
+}
+
+void receiveEvent(int howMany)
+{
+  while(Wire.available() > 0)
+  {
+    incomingByte = Wire.read();
+    if (incomingByte == aimingTarget)
+    {
+      lastMode = "aimingTarget";
+    }
+    else if (incomingByte == haveGearDown)
+    {
+      lastMode = "haveGearDown";
+    }
+    else if (incomingByte == haveGearUpNoTarget)
+    {
+      lastMode = "haveGearUpNoTarget";
+    }
+    else if (incomingByte == noGearDownMotorOff)
+    {
+      lastMode = "noGearDownMotorOff";
+     }
+    else if (incomingByte == noGearDownMotorOn)
+    {
+      lastMode = "noGearDownMotorOn";
+    }
+    else if (incomingByte == noGearUp)
+    {
+      lastMode = "noGearUp";
+    }
+    else if (incomingByte == partyMode)
+    {
+      lastMode = "partyMode";
+    }
+  }
 }
 
 void solid(uint32_t color,int *istep){
