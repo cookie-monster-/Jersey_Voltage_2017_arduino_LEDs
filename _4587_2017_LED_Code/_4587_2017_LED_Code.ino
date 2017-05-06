@@ -9,10 +9,10 @@
 
 // Which pin on the Arduino is connected to the NeoPixels?
 // On a Trinket or Gemma we suggest changing this to 1
-#define PIN            2
+#define PIN            7
 
 // How many NeoPixels are attached to the Arduino?
-#define NUMPIXELS      20
+#define NUMPIXELS      17
 
 
 // When we setup the NeoPixel library, we tell it how many pixels, and which pin to use to send signals.
@@ -46,14 +46,15 @@ void setup() {
   pixels.begin(); // This initializes the NeoPixel library.
   pixels.setBrightness(255);
   pixels.show();
-  Wire.begin(84);
+  Wire.begin(4);
+  Wire.onReceive(receiveEvent);
   //Serial.begin(9600);
 }
 void loop() {
   Serial.println("it works");
   // For a set of NeoPixels the first NeoPixel is 0, second is 1, all the way up to the count of pixels minus one.
   prevMode = lastMode;
-  while (Serial.available())
+  /*while (Serial.available())
   {
     incomingByte = Serial.read();
     Serial.print("I received: ");
@@ -87,7 +88,7 @@ void loop() {
       lastMode = "partyMode";
     }
   }
-  
+  */
   if(prevMode != lastMode) {
     istep = 0;
   }
